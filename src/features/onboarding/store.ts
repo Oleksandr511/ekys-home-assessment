@@ -1,45 +1,53 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   OnboardingState,
   OnboardingDraft,
   OnboardingStep,
   EMPTY_DRAFT,
-} from './types';
-import { apiSubmit } from '../common/api.mocks';
-import { useAuthStore } from '../auth/store';
+  DraftFieldValue,
+} from "./types";
+import { apiSubmit } from "../common/api.mocks";
+import { ApiError } from "../common/api.mocks";
+import { useAuthStore } from "../auth/store";
 
 export const useOnboardingStore = create<OnboardingState>()(
   persist(
     (set, get) => ({
       draft: EMPTY_DRAFT,
       currentStep: 1,
-      submissionStatus: 'idle',
+      submissionStatus: "idle",
       submissionError: null,
+      isCompleted: false,
+      completedAt: null,
 
-      updateDraftField: (step: OnboardingStep, field: string, value: any) => {
+      updateDraftField: (
+        step: OnboardingStep,
+        field: string,
+        value: DraftFieldValue,
+      ) => {
         set((state) => {
           const stepMap: Record<OnboardingStep, keyof OnboardingDraft> = {
-            1: 'profile',
-            2: 'document',
-            3: 'selfie',
-            4: 'address',
-            5: 'consents',
+            1: "profile",
+            2: "document",
+            3: "selfie",
+            4: "address",
+            5: "consents",
           };
 
           const stepKey = stepMap[step];
           const newDraft = { ...state.draft };
 
-          if (stepKey === 'profile') {
+          if (stepKey === "profile") {
             newDraft.profile = { ...newDraft.profile, [field]: value };
-          } else if (stepKey === 'document') {
+          } else if (stepKey === "document") {
             newDraft.document = { ...newDraft.document, [field]: value };
-          } else if (stepKey === 'selfie') {
+          } else if (stepKey === "selfie") {
             newDraft.selfie = { ...newDraft.selfie, [field]: value };
-          } else if (stepKey === 'address') {
+          } else if (stepKey === "address") {
             newDraft.address = { ...newDraft.address, [field]: value };
-          } else if (stepKey === 'consents') {
+          } else if (stepKey === "consents") {
             newDraft.consents = { ...newDraft.consents, [field]: value };
           }
 
@@ -69,38 +77,43 @@ export const useOnboardingStore = create<OnboardingState>()(
         set({
           draft: EMPTY_DRAFT,
           currentStep: 1,
-          submissionStatus: 'idle',
+          submissionStatus: "idle",
           submissionError: null,
+          isCompleted: false,
+          completedAt: null,
         });
       },
 
       submit: async (accessToken: string, refreshToken?: string) => {
-        set({ submissionStatus: 'submitting', submissionError: null });
+        set({ submissionStatus: "submitting", submissionError: null });
         try {
           const { draft } = get();
 
           // Try to submit with current token
-          let result;
           try {
-            result = await apiSubmit(accessToken, draft);
-          } catch (error: any) {
+            await apiSubmit(accessToken, draft);
+          } catch (error) {
             // If 401 and we have a refresh token, try refresh-then-retry
-            if (error.statusCode === 401 && refreshToken) {
+            if (ApiError.is401Error(error) && refreshToken) {
               try {
                 // Refresh the token
                 await useAuthStore.getState().refresh(refreshToken);
 
-                // Get new token
+                // Get new token from updated state
                 const newToken = useAuthStore.getState().session?.accessToken;
                 if (!newToken) {
-                  throw error;
+                  // Refresh failed, session is now expired
+                  throw new Error("Session expired");
                 }
 
                 // Retry submission
-                result = await apiSubmit(newToken, draft);
+                await apiSubmit(newToken, draft);
               } catch (refreshError) {
-                // If refresh fails, mark session as expired
-                useAuthStore.getState().handleTokenExpiry();
+                // If refresh fails or re-submission fails, ensure session is marked as expired
+                const authState = useAuthStore.getState();
+                if (authState.status === "logged_out") {
+                  authState.handleTokenExpiry();
+                }
                 throw refreshError;
               }
             } else {
@@ -109,32 +122,37 @@ export const useOnboardingStore = create<OnboardingState>()(
           }
 
           set({
-            submissionStatus: 'success',
+            submissionStatus: "success",
             submissionError: null,
             draft: EMPTY_DRAFT,
             currentStep: 1,
+            isCompleted: true,
+            completedAt: new Date().toISOString(),
           });
-
-          return result;
+          return true;
         } catch (err) {
-          const error = err instanceof Error ? err.message : 'Submission failed';
+          const error =
+            err instanceof Error ? err.message : "Submission failed";
           set({
-            submissionStatus: 'error',
+            submissionStatus: "error",
             submissionError: error,
           });
-          throw err;
+          return false;
         }
       },
 
       clearSubmissionState: () => {
         set({
-          submissionStatus: 'idle',
+          submissionStatus: "idle",
           submissionError: null,
         });
       },
 
       getOnboardingStatus: () => {
-        const { draft } = get();
+        const { draft, isCompleted } = get();
+
+        if (isCompleted) return "completed";
+
         const hasAnyData =
           draft.profile.fullName ||
           draft.profile.dateOfBirth ||
@@ -147,17 +165,19 @@ export const useOnboardingStore = create<OnboardingState>()(
           draft.address.country ||
           draft.consents.termsAccepted;
 
-        if (!hasAnyData) return 'not_started';
-        return 'in_progress';
+        if (!hasAnyData) return "not_started";
+        return "in_progress";
       },
     }),
     {
-      name: 'onboarding-storage',
+      name: "onboarding-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         draft: state.draft,
         currentStep: state.currentStep,
+        isCompleted: state.isCompleted,
+        completedAt: state.completedAt,
       }),
-    }
-  )
+    },
+  ),
 );

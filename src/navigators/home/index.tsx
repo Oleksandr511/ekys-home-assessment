@@ -1,10 +1,18 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTheme } from '../../features/theme/provider';
-import { HomeScreen } from '../../screens/HomeScreen';
-import { OnboardingScreen } from '../../screens/OnboardingScreen';
-import { SettingsScreen } from '../../screens/SettingsScreen';
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useTheme } from "../../features/theme/provider";
+import { HomeScreen } from "../../screens/HomeScreen";
+import { OnboardingScreen } from "../../screens/OnboardingScreen";
+import { SettingsScreen } from "../../screens/SettingsScreen";
 
-const Stack = createNativeStackNavigator();
+export type HomeNavigatorParamList = {
+  Home: undefined;
+  Onboarding: {
+    step?: string;
+  };
+  Settings: undefined;
+};
+
+const Stack = createNativeStackNavigator<HomeNavigatorParamList>();
 
 export const HomeNavigator = () => {
   const { tokens } = useTheme();
@@ -17,11 +25,8 @@ export const HomeNavigator = () => {
         },
         headerTintColor: tokens.colors.text,
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: "600",
           fontSize: 18,
-        },
-        cardStyle: {
-          backgroundColor: tokens.colors.background,
         },
       }}
     >
@@ -29,7 +34,7 @@ export const HomeNavigator = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          headerTitle: 'Home',
+          headerTitle: "Home",
           headerLeft: () => null, // Prevent back button
         }}
       />
@@ -37,14 +42,14 @@ export const HomeNavigator = () => {
         name="Onboarding"
         component={OnboardingScreen}
         options={{
-          headerTitle: 'KYC Onboarding',
+          headerTitle: "KYC Onboarding",
         }}
       />
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          headerTitle: 'Settings',
+          headerTitle: "Settings",
         }}
       />
     </Stack.Navigator>

@@ -1,7 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../features/theme/provider';
+import React from "react";
+import { View, Text, ScrollView, ViewStyle } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  useScreenContainerStyles,
+  useErrorMessageStyles,
+} from "./ScreenContainer.styles";
 
 interface ScreenContainerProps {
   children: React.ReactNode;
@@ -14,18 +17,7 @@ export const ScreenContainer: React.FC<ScreenContainerProps> = ({
   scrollable = true,
   style,
 }) => {
-  const { tokens } = useTheme();
-
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: tokens.colors.background,
-    },
-    content: {
-      paddingHorizontal: tokens.spacing.lg,
-      paddingVertical: tokens.spacing.lg,
-    },
-  });
+  const styles = useScreenContainerStyles();
 
   if (!scrollable) {
     return (
@@ -53,57 +45,9 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
   message,
   visible = true,
 }) => {
-  const { tokens } = useTheme();
+  const styles = useErrorMessageStyles();
 
   if (!visible || !message) return null;
-
-  const styles = StyleSheet.create({
-    container: {
-      backgroundColor: tokens.colors.error,
-      borderRadius: 8,
-      padding: tokens.spacing.md,
-      marginBottom: tokens.spacing.md,
-    },
-    text: {
-      color: tokens.colors.background,
-      fontSize: tokens.typography.fontSize.sm,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-  });
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>{message}</Text>
-    </View>
-  );
-};
-
-interface SuccessMessageProps {
-  message: string;
-  visible?: boolean;
-}
-
-export const SuccessMessage: React.FC<SuccessMessageProps> = ({
-  message,
-  visible = true,
-}) => {
-  const { tokens } = useTheme();
-
-  if (!visible || !message) return null;
-
-  const styles = StyleSheet.create({
-    container: {
-      backgroundColor: tokens.colors.success,
-      borderRadius: 8,
-      padding: tokens.spacing.md,
-      marginBottom: tokens.spacing.md,
-    },
-    text: {
-      color: tokens.colors.background,
-      fontSize: tokens.typography.fontSize.sm,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-  });
 
   return (
     <View style={styles.container}>

@@ -1,19 +1,18 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useTheme } from '../../features/theme/provider';
-import { LoginScreen } from '../../screens/LoginScreen';
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { LoginScreen } from "../../screens/LoginScreen";
 
-const Stack = createNativeStackNavigator();
+export type AuthNavigatorParamList = {
+  Login: undefined;
+};
+
+const Stack = createNativeStackNavigator<AuthNavigatorParamList>();
 
 export const AuthNavigator = () => {
-  const { tokens } = useTheme();
 
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        cardStyle: {
-          backgroundColor: tokens.colors.background,
-        },
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />

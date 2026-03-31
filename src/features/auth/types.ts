@@ -1,4 +1,9 @@
-export type AuthStatus = 'logged_out' | 'logging_in' | 'logged_in' | 'refreshing' | 'expired';
+export type AuthStatus =
+  | "logged_out"
+  | "logging_in"
+  | "logged_in"
+  | "refreshing"
+  | "expired";
 
 export interface User {
   id: string;
@@ -17,10 +22,13 @@ export interface AuthState {
   user: User | null;
   session: Session | null;
   error: string | null;
+  pendingDeepLinkStep: number | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setError: (error: string | null) => void;
   checkTokenExpiry: () => boolean;
   refresh: (refreshToken: string) => Promise<void>;
   handleTokenExpiry: () => void;
+  setPendingDeepLinkStep: (step: number | null) => void;
+  clearPendingDeepLinkStep: () => void;
 }

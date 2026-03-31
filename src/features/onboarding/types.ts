@@ -1,5 +1,8 @@
-export type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
+export type SubmissionStatus = "idle" | "submitting" | "success" | "error";
 export type OnboardingStep = 1 | 2 | 3 | 4 | 5;
+
+// Type-safe draft field values
+export type DraftFieldValue = string | boolean;
 
 export interface OnboardingDraft {
   profile: {
@@ -26,21 +29,21 @@ export interface OnboardingDraft {
 
 export const EMPTY_DRAFT: OnboardingDraft = {
   profile: {
-    fullName: '',
-    dateOfBirth: '',
-    nationality: '',
+    fullName: "",
+    dateOfBirth: "",
+    nationality: "",
   },
   document: {
-    documentType: '',
-    documentNumber: '',
+    documentType: "",
+    documentNumber: "",
   },
   selfie: {
     hasSelfie: false,
   },
   address: {
-    addressLine1: '',
-    city: '',
-    country: '',
+    addressLine1: "",
+    city: "",
+    country: "",
   },
   consents: {
     termsAccepted: false,
@@ -52,11 +55,17 @@ export interface OnboardingState {
   currentStep: OnboardingStep;
   submissionStatus: SubmissionStatus;
   submissionError: string | null;
-  updateDraftField: (step: OnboardingStep, field: string, value: any) => void;
+  isCompleted: boolean;
+  completedAt: string | null;
+  updateDraftField: (
+    step: OnboardingStep,
+    field: string,
+    value: DraftFieldValue,
+  ) => void;
   nextStep: () => void;
   prevStep: () => void;
   resetDraft: () => void;
-  submit: (accessToken: string, refreshToken?: string) => Promise<void>;
+  submit: (accessToken: string, refreshToken?: string) => Promise<boolean>;
   clearSubmissionState: () => void;
-  getOnboardingStatus: () => 'not_started' | 'in_progress' | 'completed';
+  getOnboardingStatus: () => "not_started" | "in_progress" | "completed";
 }

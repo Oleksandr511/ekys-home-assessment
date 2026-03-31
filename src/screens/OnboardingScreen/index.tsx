@@ -1,47 +1,49 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-} from 'react-native';
-import { useOnboardingStore } from '../../features/onboarding/store';
-import { useAuthStore } from '../../features/auth/store';
-import { useTheme } from '../../features/theme/provider';
-import { FormTextInput } from '../../components/FormTextInput';
-import { FormSelect } from '../../components/FormSelect';
-import { Button } from '../../components/Button';
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useOnboardingStore } from "../../features/onboarding/store";
+import { useAuthStore } from "../../features/auth/store";
+import { useTheme } from "../../features/theme/provider";
+import { useDeepLinkRehydration } from "../../features/onboarding/useDeepLinkRehydration";
+import { FormTextInput } from "../../components/FormTextInput";
+import { FormSelect } from "../../components/FormSelect";
+import { Button } from "../../components/Button";
 import {
   ScreenContainer,
   ErrorMessage,
-  SuccessMessage,
-} from '../../components/ScreenContainer';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+} from "../../components/ScreenContainer";
+import { useOnboardingScreenStyles } from "./useStyles";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { HomeNavigatorParamList } from "../../navigators/home";
+import { SuccessMessage } from "../../components/SuccessMessage";
 
-type OnboardingScreenProps = NativeStackScreenProps<any, 'Onboarding'>;
+type OnboardingScreenProps = NativeStackScreenProps<
+  HomeNavigatorParamList,
+  "Onboarding"
+>;
 
 const DOCUMENT_TYPES = [
-  { label: 'Passport', value: 'PASSPORT' },
-  { label: 'Driver License', value: 'DRIVER_LICENSE' },
-  { label: 'National ID', value: 'NATIONAL_ID' },
+  { label: "Passport", value: "PASSPORT" },
+  { label: "Driver License", value: "DRIVER_LICENSE" },
+  { label: "National ID", value: "NATIONAL_ID" },
 ];
 
 const COUNTRIES = [
-  { label: 'United States', value: 'US' },
-  { label: 'Canada', value: 'CA' },
-  { label: 'United Kingdom', value: 'UK' },
-  { label: 'Australia', value: 'AU' },
+  { label: "United States", value: "US" },
+  { label: "Canada", value: "CA" },
+  { label: "United Kingdom", value: "UK" },
+  { label: "Australia", value: "AU" },
 ];
 
 const NATIONALITIES = [
-  { label: 'American', value: 'US' },
-  { label: 'Canadian', value: 'CA' },
-  { label: 'British', value: 'UK' },
-  { label: 'Australian', value: 'AU' },
+  { label: "American", value: "US" },
+  { label: "Canadian", value: "CA" },
+  { label: "British", value: "UK" },
+  { label: "Australian", value: "AU" },
 ];
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   navigation,
+  route,
 }) => {
   const { tokens } = useTheme();
   const { session } = useAuthStore();
@@ -52,10 +54,16 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     nextStep,
     prevStep,
     submit,
-    submissionStatus,
+    submissionStatus = "idle",
     submissionError,
-    clearSubmissionState,
   } = useOnboardingStore();
+  const styles = useOnboardingScreenStyles();
+
+  // Handle deep link step from route params
+  const deepLinkStep = route.params?.step;
+  useDeepLinkRehydration(deepLinkStep, () => {
+    navigation.setParams({ step: undefined });
+  });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -64,34 +72,34 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
     if (currentStep === 1) {
       if (!draft.profile.fullName?.trim()) {
-        errors.fullName = 'Full name is required';
+        errors.fullName = "Full name is required";
       }
       if (!draft.profile.dateOfBirth?.trim()) {
-        errors.dateOfBirth = 'Date of birth is required';
+        errors.dateOfBirth = "Date of birth is required";
       }
       if (!draft.profile.nationality?.trim()) {
-        errors.nationality = 'Nationality is required';
+        errors.nationality = "Nationality is required";
       }
     } else if (currentStep === 2) {
       if (!draft.document.documentType?.trim()) {
-        errors.documentType = 'Document type is required';
+        errors.documentType = "Document type is required";
       }
       if (!draft.document.documentNumber?.trim()) {
-        errors.documentNumber = 'Document number is required';
+        errors.documentNumber = "Document number is required";
       }
     } else if (currentStep === 4) {
       if (!draft.address.addressLine1?.trim()) {
-        errors.addressLine1 = 'Address line is required';
+        errors.addressLine1 = "Address line is required";
       }
       if (!draft.address.city?.trim()) {
-        errors.city = 'City is required';
+        errors.city = "City is required";
       }
       if (!draft.address.country?.trim()) {
-        errors.country = 'Country is required';
+        errors.country = "Country is required";
       }
     } else if (currentStep === 5) {
       if (!draft.consents.termsAccepted) {
-        errors.terms = 'You must accept the terms and conditions';
+        errors.terms = "You must accept the terms and conditions";
       }
     }
 
@@ -117,134 +125,26 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     }
 
     if (!session?.accessToken || !session?.refreshToken) {
-      setFormErrors({ submit: 'Not authenticated' });
+      setFormErrors({ submit: "Not authenticated" });
       return;
     }
 
     try {
-      await submit(session.accessToken, session.refreshToken);
-      navigation.replace('Home' as never);
+      const isSuccess = await submit(session.accessToken, session.refreshToken);
+      if (isSuccess) {
+        navigation.replace("Home");
+      }
     } catch (err) {
       // Error is already set in store
-      console.error('Submission failed:', err);
+      console.error("Submission failed:", err);
     }
   };
-
-  const styles = StyleSheet.create({
-    stepIndicator: {
-      flexDirection: 'row',
-      marginBottom: tokens.spacing.lg,
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    stepDot: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: tokens.colors.surface,
-    },
-    stepDotActive: {
-      backgroundColor: tokens.colors.primary,
-    },
-    stepDotText: {
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-    stepDotTextActive: {
-      color: tokens.colors.background,
-    },
-    stepLine: {
-      flex: 1,
-      height: 2,
-      backgroundColor: tokens.colors.border,
-      marginHorizontal: tokens.spacing.sm,
-    },
-    stepLineActive: {
-      backgroundColor: tokens.colors.primary,
-    },
-    stepTitle: {
-      fontSize: tokens.typography.fontSize.lg,
-      fontWeight: tokens.typography.fontWeight.bold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing.lg,
-    },
-    formSection: {
-      marginBottom: tokens.spacing.xl,
-    },
-    checkboxContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: tokens.spacing.md,
-      paddingHorizontal: tokens.spacing.md,
-      paddingVertical: tokens.spacing.sm,
-      backgroundColor: tokens.colors.surface,
-      borderRadius: 8,
-      borderWidth: formErrors.terms ? 1 : 0,
-      borderColor: tokens.colors.error,
-    },
-    checkbox: {
-      width: 24,
-      height: 24,
-      borderWidth: 2,
-      borderColor: tokens.colors.primary,
-      borderRadius: 4,
-      marginRight: tokens.spacing.md,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    checkboxChecked: {
-      backgroundColor: tokens.colors.primary,
-    },
-    checkboxText: {
-      flex: 1,
-      fontSize: tokens.typography.fontSize.md,
-      color: tokens.colors.text,
-    },
-    buttonGroup: {
-      flexDirection: 'row',
-      gap: tokens.spacing.md,
-      marginTop: tokens.spacing.xl,
-    },
-    button: {
-      flex: 1,
-    },
-    reviewSection: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: 12,
-      padding: tokens.spacing.lg,
-      marginBottom: tokens.spacing.lg,
-    },
-    reviewTitle: {
-      fontSize: tokens.typography.fontSize.md,
-      fontWeight: tokens.typography.fontWeight.bold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing.md,
-    },
-    reviewItem: {
-      marginBottom: tokens.spacing.md,
-      paddingBottom: tokens.spacing.md,
-      borderBottomWidth: 1,
-      borderBottomColor: tokens.colors.border,
-    },
-    reviewLabel: {
-      fontSize: tokens.typography.fontSize.xs,
-      color: tokens.colors.textSecondary,
-      marginBottom: tokens.spacing.xs,
-    },
-    reviewValue: {
-      fontSize: tokens.typography.fontSize.md,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-  });
 
   const renderStepIndicator = () => {
     return (
       <View style={styles.stepIndicator}>
         {[1, 2, 3, 4, 5].map((step) => (
-          <View key={step} style={{ flex: 1, alignItems: 'center' }}>
+          <View key={step} style={{ flex: 1, alignItems: "center" }}>
             <View
               style={[
                 styles.stepDot,
@@ -281,14 +181,14 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         label="Full Name"
         placeholder="Enter your full name"
         value={draft.profile.fullName}
-        onChangeText={(text) => updateDraftField(1, 'fullName', text)}
+        onChangeText={(text) => updateDraftField(1, "fullName", text)}
         error={formErrors.fullName}
       />
       <FormTextInput
         label="Date of Birth"
         placeholder="YYYY-MM-DD"
         value={draft.profile.dateOfBirth}
-        onChangeText={(text) => updateDraftField(1, 'dateOfBirth', text)}
+        onChangeText={(text) => updateDraftField(1, "dateOfBirth", text)}
         error={formErrors.dateOfBirth}
         helperText="Format: YYYY-MM-DD (e.g., 1990-05-15)"
       />
@@ -296,7 +196,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         label="Nationality"
         options={NATIONALITIES}
         value={draft.profile.nationality}
-        onValueChange={(value) => updateDraftField(1, 'nationality', value)}
+        onValueChange={(value) => updateDraftField(1, "nationality", value)}
         error={formErrors.nationality}
       />
     </View>
@@ -309,14 +209,14 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         label="Document Type"
         options={DOCUMENT_TYPES}
         value={draft.document.documentType}
-        onValueChange={(value) => updateDraftField(2, 'documentType', value)}
+        onValueChange={(value) => updateDraftField(2, "documentType", value)}
         error={formErrors.documentType}
       />
       <FormTextInput
         label="Document Number"
         placeholder="Enter document number"
         value={draft.document.documentNumber}
-        onChangeText={(text) => updateDraftField(2, 'documentNumber', text)}
+        onChangeText={(text) => updateDraftField(2, "documentNumber", text)}
         error={formErrors.documentNumber}
       />
     </View>
@@ -326,9 +226,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     <View style={styles.formSection}>
       <Text style={styles.stepTitle}>Step 3: Capture Selfie</Text>
       <Button
-        label={draft.selfie.hasSelfie ? '✓ Selfie Captured' : 'Capture Selfie'}
-        onPress={() => updateDraftField(3, 'hasSelfie', true)}
-        variant={draft.selfie.hasSelfie ? 'outline' : 'primary'}
+        label={draft.selfie.hasSelfie ? "✓ Selfie Captured" : "Capture Selfie"}
+        onPress={() => updateDraftField(3, "hasSelfie", true)}
+        variant={draft.selfie.hasSelfie ? "outline" : "primary"}
         size="large"
       />
       <Text
@@ -353,21 +253,21 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         label="Address Line 1"
         placeholder="Enter your address"
         value={draft.address.addressLine1}
-        onChangeText={(text) => updateDraftField(4, 'addressLine1', text)}
+        onChangeText={(text) => updateDraftField(4, "addressLine1", text)}
         error={formErrors.addressLine1}
       />
       <FormTextInput
         label="City"
         placeholder="Enter your city"
         value={draft.address.city}
-        onChangeText={(text) => updateDraftField(4, 'city', text)}
+        onChangeText={(text) => updateDraftField(4, "city", text)}
         error={formErrors.city}
       />
       <FormSelect
         label="Country"
         options={COUNTRIES}
         value={draft.address.country}
-        onValueChange={(value) => updateDraftField(4, 'country', value)}
+        onValueChange={(value) => updateDraftField(4, "country", value)}
         error={formErrors.country}
       />
     </View>
@@ -404,8 +304,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
           <Text style={styles.reviewLabel}>Document Type</Text>
           <Text style={styles.reviewValue}>
             {
-              DOCUMENT_TYPES.find((d) => d.value === draft.document.documentType)
-                ?.label
+              DOCUMENT_TYPES.find(
+                (d) => d.value === draft.document.documentType,
+              )?.label
             }
           </Text>
         </View>
@@ -432,9 +333,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       </View>
 
       <TouchableOpacity
-        style={styles.checkboxContainer}
+        style={[
+          styles.checkboxContainer,
+          formErrors.terms && styles.checkboxContainerError,
+        ]}
         onPress={() =>
-          updateDraftField(5, 'termsAccepted', !draft.consents.termsAccepted)
+          updateDraftField(5, "termsAccepted", !draft.consents.termsAccepted)
         }
       >
         <View
@@ -463,13 +367,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       {renderStepIndicator()}
 
       <ErrorMessage
-        message={submissionError || formErrors.submit || ''}
+        message={submissionError || formErrors.submit || ""}
         visible={!!(submissionError || formErrors.submit)}
       />
 
       <SuccessMessage
         message="Onboarding completed successfully!"
-        visible={submissionStatus === 'success'}
+        visible={submissionStatus === "success"}
       />
 
       {currentStep === 1 && renderStep1()}
@@ -489,17 +393,15 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
         )}
 
         {currentStep < 5 ? (
-          <Button
-            label="Next"
-            onPress={handleNextStep}
-            style={styles.button}
-          />
+          <Button label="Next" onPress={handleNextStep} style={styles.button} />
         ) : (
           <Button
-            label={submissionStatus === 'submitting' ? 'Submitting...' : 'Submit'}
+            label={
+              submissionStatus === "submitting" ? "Submitting..." : "Submit"
+            }
             onPress={handleSubmit}
-            loading={submissionStatus === 'submitting'}
-            disabled={submissionStatus === 'submitting'}
+            loading={submissionStatus === "submitting"}
+            disabled={submissionStatus === "submitting"}
             style={styles.button}
           />
         )}

@@ -5,6 +5,7 @@ A React Native/Expo mobile application for electronic Know Your Customer (eKYC) 
 ## Features
 
 ### Milestone 1: Core UX + Baseline State ✅
+
 - **Authentication**: Login screen with email/password validation
 - **Multi-Step Onboarding**: 5-step form (Profile, Document, Selfie, Address, Review)
 - **Theme System**: Light/dark mode with token-based design system
@@ -13,6 +14,7 @@ A React Native/Expo mobile application for electronic Know Your Customer (eKYC) 
 - **Mocked APIs**: Realistic API simulation with delays and error handling
 
 ### Milestone 2: Session Management + Synchronization ✅
+
 - **Token Expiry Detection**: Automatic detection with periodic checks
 - **Token Refresh**: Refresh-then-retry pattern for 401 errors
 - **Navigation Guards**: Route protection and session expiry alerts
@@ -99,8 +101,6 @@ npm test
 # Watch mode
 npm test -- --watch
 
-# Coverage
-npm test -- --coverage
 ```
 
 ## Demo Credentials
@@ -113,9 +113,11 @@ All APIs are mocked. Use these credentials to login:
 ## Key Features Explained
 
 ### Feature-Based Architecture
+
 Code is organized by feature (auth, theme, onboarding), not by type (components, reducers). Each feature is self-contained with its store, types, and tests.
 
 ### Zustand Stores
+
 - **Auth Store** (`src/features/auth/store.ts`)
   - Manages: status, user, session, login/logout
   - Lifecycle: Detects expiry, handles refresh-then-retry
@@ -133,6 +135,7 @@ Code is organized by feature (auth, theme, onboarding), not by type (components,
   - Submit: Handles refresh-then-retry on token expiry
 
 ### Session Management (M2)
+
 The app detects token expiry and handles it gracefully:
 
 1. **Token Expiry Check** (`checkTokenExpiry()`)
@@ -150,6 +153,7 @@ The app detects token expiry and handles it gracefully:
    - Shows alert and prevents access if session expires
 
 ### Theme System
+
 Token-based theming with centralized design values:
 
 ```typescript
@@ -165,13 +169,16 @@ darkTheme = { ... }
 Components consume via `useTheme()` hook - update once, apply everywhere.
 
 ### Form Validation
+
 All form validation happens on submit (not on blur), as specified:
+
 - Profile: name, DOB, nationality required
 - Document: type, number required
 - Address: address line, city, country required
 - Review: terms must be accepted
 
 ### Mocked APIs
+
 Located in `src/features/common/api.mocks.ts`:
 
 - `apiLogin(email, password)` - Email/password auth with validation
@@ -180,6 +187,7 @@ Located in `src/features/common/api.mocks.ts`:
 - `apiSubmit(accessToken, draft)` - Validate and submit onboarding
 
 All APIs include:
+
 - Realistic network delays (400-1200ms)
 - Proper error codes (400, 401, 500)
 - Validation feedback
@@ -233,18 +241,21 @@ All APIs include:
 ## Troubleshooting
 
 ### Tests failing?
+
 ```bash
 npm test -- --clearCache
 npm test
 ```
 
 ### App won't start?
+
 ```bash
 npm install --legacy-peer-deps
 expo start --clear
 ```
 
 ### Theme not persisting?
+
 AsyncStorage is mocked in tests. In development, theme persists to device storage automatically.
 
 ## Next Steps (Milestone 3 - Bonus)
@@ -256,6 +267,3 @@ Potential improvements if time permits:
 3. **Accessibility**: Improve ARIA labels, reduced motion support
 4. **Performance**: Profile re-renders, optimize with useMemo/useCallback
 
-## License
-
-MIT - Take-home assessment for senior frontend role

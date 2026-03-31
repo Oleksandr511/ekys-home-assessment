@@ -1,39 +1,40 @@
-import { create } from 'zustand';
-import { AuthState, User, Session } from './types';
-import { apiLogin, apiMe, apiRefresh } from '../common/api.mocks';
+import { create } from "zustand";
+import type { AuthState } from "./types";
+import { apiLogin, apiRefresh } from "../common/api.mocks";
 
-export const useAuthStore = create<AuthState>((set) => ({
-  status: 'logged_out',
+export const useAuthStore = create<AuthState>((set, get) => ({
+  status: "logged_out",
   user: null,
   session: null,
   error: null,
+  pendingDeepLinkStep: null,
 
   login: async (email: string, password: string) => {
-    set({ status: 'logging_in', error: null });
+    set({ status: "logging_in", error: null });
     try {
       const { user, session } = await apiLogin(email, password);
       set({
-        status: 'logged_in',
+        status: "logged_in",
         user,
         session,
         error: null,
       });
     } catch (err) {
-      const error = err instanceof Error ? err.message : 'Login failed';
+      const error = err instanceof Error ? err.message : "Login failed";
       set({
-        status: 'logged_out',
+        status: "logged_out",
         error,
       });
-      throw err;
     }
   },
 
   logout: () => {
     set({
-      status: 'logged_out',
+      status: "logged_out",
       user: null,
       session: null,
       error: null,
+      pendingDeepLinkStep: null,
     });
   },
 
@@ -41,9 +42,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ error });
   },
 
+  setPendingDeepLinkStep: (step: number | null) => {
+    set({ pendingDeepLinkStep: step });
+  },
+
+  clearPendingDeepLinkStep: () => {
+    set({ pendingDeepLinkStep: null });
+  },
+
   checkTokenExpiry: () => {
-    const state = useAuthStore.getState();
-    if (!state.session) return true;
+    const state = get();
+    // Only check expiry if there's an actual session (user is logged in)
+    if (!state.session) return false;
 
     const expiresAt = new Date(state.session.expiresAt).getTime();
     const now = Date.now();
@@ -51,32 +61,32 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   refresh: async (refreshToken: string) => {
-    set({ status: 'refreshing', error: null });
+    set({ status: "refreshing", error: null });
     try {
       const { session } = await apiRefresh(refreshToken);
       set({
-        status: 'logged_in',
+        status: "logged_in",
         session,
         error: null,
       });
     } catch (err) {
-      const error = err instanceof Error ? err.message : 'Refresh failed';
+      const error = err instanceof Error ? err.message : "Refresh failed";
       set({
-        status: 'logged_out',
+        status: "logged_out",
         user: null,
         session: null,
         error,
       });
-      throw err;
     }
   },
 
   handleTokenExpiry: () => {
     set({
-      status: 'expired',
+      status: "expired",
       user: null,
       session: null,
-      error: 'Session expired. Please login again.',
+      error: "Session expired. Please login again.",
+      pendingDeepLinkStep: null,
     });
   },
 }));

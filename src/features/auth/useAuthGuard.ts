@@ -1,26 +1,34 @@
-import { useEffect } from 'react';
-import { useAuthStore } from './store';
+import { useEffect } from "react";
+import { useAuthStore } from "./store";
 
 /**
  * Hook that checks token expiry on mount and periodically
  * Logs out user if token is expired
  */
 export const useAuthGuard = () => {
-  const { checkTokenExpiry, handleTokenExpiry } = useAuthStore();
+  const status = useAuthStore((state) => state.status);
+  const checkTokenExpiry = useAuthStore((state) => state.checkTokenExpiry);
+  const handleTokenExpiry = useAuthStore((state) => state.handleTokenExpiry);
 
   useEffect(() => {
-    // Check on mount
-    if (checkTokenExpiry()) {
-      handleTokenExpiry();
+    if (status !== "logged_in" && status !== "refreshing") {
+      return;
     }
 
-    // Check periodically (every minute)
-    const interval = setInterval(() => {
+    const checkAndHandleExpiry = () => {
       if (checkTokenExpiry()) {
         handleTokenExpiry();
       }
+    };
+
+    // Check on mount
+    checkAndHandleExpiry();
+
+    // Check periodically (every minute)
+    const interval = setInterval(() => {
+      checkAndHandleExpiry();
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [checkTokenExpiry, handleTokenExpiry]);
+  }, [status, checkTokenExpiry, handleTokenExpiry]);
 };

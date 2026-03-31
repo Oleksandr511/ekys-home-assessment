@@ -1,132 +1,98 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
-import { useAuthStore } from '../../features/auth/store';
-import { useOnboardingStore } from '../../features/onboarding/store';
-import { useTheme } from '../../features/theme/provider';
-import { Button } from '../../components/Button';
-import { ScreenContainer } from '../../components/ScreenContainer';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useAuthStore } from "../../features/auth/store";
+import { useOnboardingStore } from "../../features/onboarding/store";
+import { Button } from "../../components/Button";
+import { ScreenContainer } from "../../components/ScreenContainer";
+import { useHomeScreenStyles } from "./useStyles";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { HomeNavigatorParamList } from "../../navigators/home";
 
-type HomeScreenProps = NativeStackScreenProps<any, 'Home'>;
+type HomeScreenProps = NativeStackScreenProps<HomeNavigatorParamList, "Home">;
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-  const { tokens } = useTheme();
-  const { user, status } = useAuthStore();
-  const { getOnboardingStatus } = useOnboardingStore();
-
-  useEffect(() => {
-    if (status === 'logged_out' || status === 'expired') {
-      navigation.replace('AuthNavigator' as never);
-    }
-  }, [status, navigation]);
+  const { user } = useAuthStore();
+  const { getOnboardingStatus, isCompleted, completedAt } = useOnboardingStore();
+  const styles = useHomeScreenStyles();
 
   const onboardingStatus = getOnboardingStatus();
 
   const getStatusText = (): string => {
-    if (onboardingStatus === 'not_started') {
-      return 'Not started';
+    if (onboardingStatus === "not_started") {
+      return "Not started";
     }
-    return 'In progress';
+    if (onboardingStatus === "completed") {
+      return "Completed";
+    }
+    return "In progress";
   };
 
-  const getStatusColor = (): string => {
-    if (onboardingStatus === 'not_started') {
-      return tokens.colors.warning;
-    }
-    return tokens.colors.primary;
+  const formatDate = (isoString: string | null): string => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
-  const styles = StyleSheet.create({
-    headerSection: {
-      marginBottom: tokens.spacing.xl,
-      backgroundColor: tokens.colors.surface,
-      borderRadius: 12,
-      padding: tokens.spacing.lg,
-    },
-    greeting: {
-      fontSize: tokens.typography.fontSize.lg,
-      fontWeight: tokens.typography.fontWeight.medium,
-      color: tokens.colors.textSecondary,
-      marginBottom: tokens.spacing.sm,
-    },
-    userName: {
-      fontSize: tokens.typography.fontSize.xl,
-      fontWeight: tokens.typography.fontWeight.bold,
-      color: tokens.colors.text,
-    },
-    section: {
-      marginBottom: tokens.spacing.xl,
-    },
-    sectionTitle: {
-      fontSize: tokens.typography.fontSize.lg,
-      fontWeight: tokens.typography.fontWeight.bold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing.md,
-    },
-    statusCard: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: 12,
-      padding: tokens.spacing.lg,
-      marginBottom: tokens.spacing.lg,
-      borderLeftWidth: 4,
-      borderLeftColor: getStatusColor(),
-    },
-    statusLabel: {
-      fontSize: tokens.typography.fontSize.sm,
-      color: tokens.colors.textSecondary,
-      marginBottom: tokens.spacing.xs,
-    },
-    statusValue: {
-      fontSize: tokens.typography.fontSize.md,
-      fontWeight: tokens.typography.fontWeight.medium,
-      color: tokens.colors.text,
-    },
-    settingsButton: {
-      alignSelf: 'flex-end',
-      marginBottom: tokens.spacing.lg,
-    },
-    settingsButtonText: {
-      fontSize: tokens.typography.fontSize.md,
-      color: tokens.colors.primary,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-  });
+  const formatTime = (isoString: string | null): string => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <ScreenContainer>
       <TouchableOpacity
         style={styles.settingsButton}
-        onPress={() => navigation.navigate('Settings' as never)}
+        onPress={() => navigation.navigate("Settings")}
       >
         <Text style={styles.settingsButtonText}>⚙️ Settings</Text>
       </TouchableOpacity>
 
       <View style={styles.headerSection}>
         <Text style={styles.greeting}>Welcome back,</Text>
-        <Text style={styles.userName}>{user?.fullName || 'User'}</Text>
+        <Text style={styles.userName}>{user?.fullName || "User"}</Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Onboarding Status</Text>
-        <View style={styles.statusCard}>
-          <Text style={styles.statusLabel}>Current Status</Text>
-          <Text style={styles.statusValue}>{getStatusText()}</Text>
-        </View>
+        {isCompleted && completedAt ? (
+          <View style={styles.completionCard}>
+            <Text style={styles.completionIcon}>✓</Text>
+            <Text style={styles.completionTitle}>Verification Complete</Text>
+            <Text style={styles.completionDate}>
+              Completed on {formatDate(completedAt)}
+            </Text>
+            <Text style={styles.completionTime}>{formatTime(completedAt)}</Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.statusCard}>
+              <Text style={styles.statusLabel}>Current Status</Text>
+              <Text style={styles.statusValue}>{getStatusText()}</Text>
+            </View>
 
-        <Button
-          label={
-            onboardingStatus === 'not_started'
-              ? 'Start Onboarding'
-              : 'Resume Onboarding'
-          }
-          onPress={() => navigation.navigate('Onboarding' as never)}
-          size="large"
-        />
+            {onboardingStatus !== "completed" && (
+              <Button
+                label={
+                  onboardingStatus === "not_started"
+                    ? "Start Onboarding"
+                    : "Resume Onboarding"
+                }
+                onPress={() =>
+                  navigation.navigate("Onboarding", {})
+                }
+                size="large"
+              />
+            )}
+          </>
+        )}
       </View>
     </ScreenContainer>
   );

@@ -1,109 +1,28 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
-import { useAuthStore } from '../../features/auth/store';
-import { useTheme } from '../../features/theme/provider';
-import { Button } from '../../components/Button';
-import { ScreenContainer } from '../../components/ScreenContainer';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useAuthStore } from "../../features/auth/store";
+import { useTheme } from "../../features/theme/provider";
+import { Button } from "../../components/Button";
+import { ScreenContainer } from "../../components/ScreenContainer";
+import { useSettingsScreenStyles } from "./useStyles";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { HomeNavigatorParamList } from "../../navigators/home";
 
-type SettingsScreenProps = NativeStackScreenProps<any, 'Settings'>;
+type SettingsScreenProps = NativeStackScreenProps<HomeNavigatorParamList, "Settings">;
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({
-  navigation,
-}) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = () => {
   const { tokens, theme, setTheme } = useTheme();
   const { logout } = useAuthStore();
+  const styles = useSettingsScreenStyles();
 
   const handleLogout = () => {
     logout();
-    navigation.replace('AuthNavigator' as never);
   };
 
   const handleThemeToggle = async () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+    const newTheme = theme === "light" ? "dark" : "light";
     await setTheme(newTheme);
   };
-
-  const styles = StyleSheet.create({
-    section: {
-      marginBottom: tokens.spacing.xl,
-    },
-    sectionTitle: {
-      fontSize: tokens.typography.fontSize.lg,
-      fontWeight: tokens.typography.fontWeight.bold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing.md,
-    },
-    card: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: 12,
-      padding: tokens.spacing.lg,
-      marginBottom: tokens.spacing.md,
-    },
-    cardRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: tokens.spacing.md,
-    },
-    cardRowLast: {
-      marginBottom: 0,
-    },
-    label: {
-      fontSize: tokens.typography.fontSize.md,
-      color: tokens.colors.text,
-      fontWeight: tokens.typography.fontWeight.medium,
-    },
-    value: {
-      fontSize: tokens.typography.fontSize.md,
-      color: tokens.colors.textSecondary,
-    },
-    themeToggleButton: {
-      flexDirection: 'row',
-      backgroundColor: tokens.colors.primary,
-      borderRadius: 8,
-      overflow: 'hidden',
-      marginTop: tokens.spacing.sm,
-    },
-    themeOption: {
-      flex: 1,
-      paddingVertical: tokens.spacing.sm,
-      paddingHorizontal: tokens.spacing.md,
-      alignItems: 'center',
-      backgroundColor: tokens.colors.primary,
-    },
-    themeOptionActive: {
-      backgroundColor: tokens.colors.primaryLight,
-    },
-    themeOptionText: {
-      color: tokens.colors.background,
-      fontWeight: tokens.typography.fontWeight.medium,
-      fontSize: tokens.typography.fontSize.sm,
-    },
-    themeOptionTextActive: {
-      color: tokens.colors.primary,
-    },
-    appInfo: {
-      backgroundColor: tokens.colors.surface,
-      borderRadius: 12,
-      padding: tokens.spacing.lg,
-    },
-    appName: {
-      fontSize: tokens.typography.fontSize.md,
-      fontWeight: tokens.typography.fontWeight.bold,
-      color: tokens.colors.text,
-      marginBottom: tokens.spacing.sm,
-    },
-    appVersion: {
-      fontSize: tokens.typography.fontSize.sm,
-      color: tokens.colors.textSecondary,
-    },
-  });
 
   return (
     <ScreenContainer>
@@ -113,7 +32,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <View style={styles.cardRow}>
             <Text style={styles.label}>Theme</Text>
             <Text style={styles.value}>
-              {theme === 'light' ? '☀️' : '🌙'} {theme === 'light' ? 'Light' : 'Dark'}
+              {theme === "light" ? "☀️" : "🌙"}{" "}
+              {theme === "light" ? "Light" : "Dark"}
             </Text>
           </View>
 
@@ -121,14 +41,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <TouchableOpacity
               style={[
                 styles.themeOption,
-                theme === 'light' && styles.themeOptionActive,
+                theme === "light" && styles.themeOptionActive,
               ]}
-              onPress={() => theme !== 'light' && handleThemeToggle()}
+              onPress={() => theme !== "light" && handleThemeToggle()}
             >
               <Text
                 style={[
                   styles.themeOptionText,
-                  theme === 'light' && styles.themeOptionTextActive,
+                  theme === "light" && styles.themeOptionTextActive,
                 ]}
               >
                 ☀️ Light
@@ -137,14 +57,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <TouchableOpacity
               style={[
                 styles.themeOption,
-                theme === 'dark' && styles.themeOptionActive,
+                theme === "dark" && styles.themeOptionActive,
               ]}
-              onPress={() => theme !== 'dark' && handleThemeToggle()}
+              onPress={() => theme !== "dark" && handleThemeToggle()}
             >
               <Text
                 style={[
                   styles.themeOptionText,
-                  theme === 'dark' && styles.themeOptionTextActive,
+                  theme === "dark" && styles.themeOptionTextActive,
                 ]}
               >
                 🌙 Dark
