@@ -258,12 +258,10 @@ expo start --clear
 
 AsyncStorage is mocked in tests. In development, theme persists to device storage automatically.
 
-## Next Steps (Milestone 3 - Bonus)
+## (Milestone 3 - Bonus)
 
 Potential improvements if time permits:
 
-1. **Offline Queue**: Queue submit attempts when offline, auto-retry online
 2. **Deep Linking**: Support deep links like `myapp://onboarding/review`
-3. **Accessibility**: Improve ARIA labels, reduced motion support
-4. **Performance**: Profile re-renders, optimize with useMemo/useCallback
+
 
